@@ -1,6 +1,6 @@
 import numpy as np
 import dataset as ds
-
+import copy
 
 def initialize(X, dim, number):  # dim is the number of the features of X
     w = np.random.randn(dim, 1)
@@ -19,11 +19,16 @@ def adjust(z, Y, dim):
 
 
 def optimize(n, a, z, number):  # n: learning speed  number: the # of training data
-    for i in range(800):
+    flag = 1
+    time = 0
+    while flag == -1 or time == 0:
+        flag = 2
+        time += 1
         for j in range(number):
             z_plus = z[:,j].reshape(3,1)
-            if np.dot(a.T, z_plus) < 0:
+            if np.dot(a.T, z_plus) <= 0:
                 a = a + n * z_plus
+                flag = -1
     return a
 
 
@@ -45,6 +50,7 @@ def accuracy(Y, y):
 if __name__ == '__main__':
 # create the data set
     X, Y, w = ds.mk_data(120)
+    Y_nature = copy.deepcopy(Y)
     Y[Y<0] = 0
     number = X.shape[1]
 # training part
@@ -57,6 +63,13 @@ if __name__ == '__main__':
     result[result > 0] = 1
     result[result < 0] = 0
     print('Accuracy: %d' % accuracy(result, Y[:, 100:120]) + "%")
+    x = np.arange(-1.1, 1.1, .01)
+    y = np.arange(-1.1, 1.1, .01)
+    x, y = np.meshgrid(x, y)
+    f = a_new[0] * x + a_new[1] * y + a_new[2]
+    pl = ds.plot(X, Y_nature)
+    pl.contour(x, y, f, 0, colors = 'black', linewidth = 0.001)
+    pl.show()
 
 
 
