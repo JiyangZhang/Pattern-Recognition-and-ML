@@ -42,14 +42,23 @@ def mk_data(N, noisy=False):
 
     return (X, y, w)
 
+
+def plot(X, y): # num : the # of created data
+    y = y.repeat(X.shape[0], axis=0)
+    x1 = X[y == 1]
+    s = x1.size
+    x1 = x1.reshape(2, int(s / 2))
+    x2 = X[y == -1]
+    s = x2.size
+    x2 = x2.reshape(2, int(s / 2))
+    pl.plot(x1[0, :], x1[1, :], 'g*')  # 调用pylab的plot函数绘制曲线
+    pl.plot(x2[0, :], x2[1, :], 'r*')
+    return pl
+
 if __name__ == '__main__':
-    #sign = np.vectorize(sign)
     X, y, w = mk_data(100)
-    pl.plot(X[0,:], X[1, :],'*')  # 调用pylab的plot函数绘制曲线
-    pl.show()
-    print(y)
-
-
+    a = plot(X, y)
+    a.show()
 
 
 
