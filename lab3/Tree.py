@@ -1,6 +1,7 @@
 import irisData
 import Information_Gain
 from collections import Counter
+import copy
 
 dataset = irisData.depose()  # a list of class iris dataset with attributes list and class name
 
@@ -33,11 +34,13 @@ def TreeGenerate(dataset, attr_list, class_value): # dataset is a list of class 
     else:
         d = Information_Gain.get_split(DT.key, attr_list)
         left = d['groups'][0]
-        attr_list_new = attr_list
-        attr_list_new.remove(d['index'])
-        DT.leftChild = TreeGenerate(left, attr_list_new, class_value)
+        attr_list_newl = copy.deepcopy(attr_list)
+        attr_list_newl.remove(d['index'])
+        DT.leftChild = TreeGenerate(left, attr_list_newl, class_value)
         right = d['groups'][1]
-        DT.rightChild = TreeGenerate(right, attr_list_new, class_value)
+        attr_list_newr = copy.deepcopy(attr_list)
+        attr_list_newr.remove(d['index'])
+        DT.rightChild = TreeGenerate(right, attr_list_newr, class_value)
     return DT
 
 
