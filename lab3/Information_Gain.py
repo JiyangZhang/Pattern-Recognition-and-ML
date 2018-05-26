@@ -25,6 +25,7 @@ def get_split(dataset, attrs):
     #attrs = [0,1,2,3] in iris i.e. four attributes
     :param dataset: input the dataset
     :param attrs: the kinds of attributes of the dataset
+    :param forbidlist: the element that is forbiddend to be the threshold
     :return: dictionary: to mark down the biggest information gain attribute
     '''
     b_index, b_value, b_score, b_groups = 0, 0, 0, None
