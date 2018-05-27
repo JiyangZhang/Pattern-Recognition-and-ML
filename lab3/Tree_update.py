@@ -8,6 +8,7 @@ dataset = irisData.depose()  # a list of class iris dataset with attributes list
 class DecisionTree():
     '''
     define the DecisionTree class, the item of it is a list of dataset
+    In this file the different attributes can be used for more than one time, there is a depth restriction;
     '''
     def __init__(self, dataset, attr_list, depth): # a list of dataclass object, a list of kinds of classes
         self.key=dataset

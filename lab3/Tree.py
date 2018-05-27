@@ -6,10 +6,7 @@ import copy
 dataset = irisData.depose()  # a list of class iris dataset with attributes list and class name
 
 class DecisionTree():
-    '''
-    define the DecisionTree class, the item of it is a list of dataset
-    '''
-    def __init__(self, dataset, attr_list): # a list of dataclass object, a list of kinds of classes
+    def __init__(self, dataset, attr_list): 
         self.key=dataset
         self.atr_list = attr_list
         self.cls = None
