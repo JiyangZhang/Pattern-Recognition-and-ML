@@ -1,6 +1,14 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import BreastData
 
+# Load the UCI BreastCancer dataset
+training_set, test_set = BreastData.data_process()
+X = training_set[0]
+Y = training_set[1]
+# Load test set
+x = test_set[0]
+y = test_set[1]
 
 def initialize_parameters_deep(layer_dims):
     """
@@ -42,13 +50,7 @@ def linear_forward(A, W, b):
     cache = (A, W, b)
     return Z, cache
 
-def sigmoid(a):
-    z = 1/(1 + np.exp(a * -1))
-    return z
-
-def relu(a):
-    a = a*(a>0)
-    return a
+	
 
 
 def linear_activation_forward(A_prev, W, b, activation):
@@ -71,17 +73,14 @@ def linear_activation_forward(A_prev, W, b, activation):
         Z, linear_cache = linear_forward(A_prev, W, b)
         A, activation_cache = sigmoid(Z)
 
-
     elif activation == "relu":
         # Inputs: "A_prev, W, b". Outputs: "A, activation_cache".
-        ### START CODE HERE ### (≈ 2 lines of code)
         Z, linear_cache = linear_forward(A_prev, W, b)
         A, activation_cache = relu(Z)
-        ### END CODE HERE ###
 
     assert (A.shape == (W.shape[0], A_prev.shape[1]))
     cache = (linear_cache, activation_cache)
-    return A, cache
+    return A, cache  # 
 
 
 def L_model_forward(X, parameters):
@@ -110,7 +109,7 @@ def L_model_forward(X, parameters):
 
     # Implement LINEAR -> SIGMOID. Add "cache" to the "caches" list.
     AL, cache = linear_activation_forward(A, parameters["W" + str(L)], parameters["b" + str(L)], "sigmoid")
-    caches.append(cache)
+    caches.append(cache)  #  every cache of linear_activation_forward(), tuples of (linear_cache for  (A, W, b), and *) 
     assert (AL.shape == (1, X.shape[1]))
 
     return AL, caches
@@ -131,8 +130,7 @@ def compute_cost(AL, Y):
 
     # Compute loss from aL and y.
     cost = np.sum(Y * np.log(AL) + (1 - Y) * np.log(1 - AL), axis=1) * (-1) / m
-    cost = np.squeeze(cost)  # To make sure your cost's shape is what we expect (e.g. this turns [[17]] into 17).
-    assert (cost.shape == ())
+    #assert (cost.shape == ())
     return cost
 
 
@@ -183,6 +181,85 @@ def linear_activation_backward(dA, cache, activation):
         dA_prev, dW, db = linear_backward(dZ, linear_cache)
 
     return dA_prev, dW, db
+	
+def sigmoid(Z):
+    """
+        Implements the sigmoid activation in numpy
+
+        Arguments:
+        Z -- numpy array of any shape
+
+        Returns:
+        A -- output of sigmoid(z), same shape as Z
+        cache -- returns Z as well, useful during backpropagation
+        """
+
+    A = 1 / (1 + np.exp(-Z))
+    cache = Z
+    return A, cache
+
+def sigmoid_backward(dA, cache):
+    """
+        Implement the backward propagation for a single SIGMOID unit.
+
+        Arguments:
+        dA -- post-activation gradient, of any shape
+        cache -- 'Z' where we store for computing backward propagation efficiently
+
+        Returns:
+        dZ -- Gradient of the cost with respect to Z
+        """
+
+    Z = cache
+
+    s = 1 / (1 + np.exp(-Z))
+    dZ = dA * s * (1 - s)
+
+    assert (dZ.shape == Z.shape)
+
+    return dZ
+
+
+def relu(Z):
+    """
+        Implement the RELU function.
+
+        Arguments:
+        Z -- Output of the linear layer, of any shape
+
+        Returns:
+        A -- Post-activation parameter, of the same shape as Z
+        cache -- a python dictionary containing "A" ; stored for computing the backward pass efficiently
+        """
+
+    A = np.maximum(0, Z)
+
+    assert (A.shape == Z.shape)
+
+    cache = Z
+    return A, cache
+	
+def relu_backward(dA, cache):
+    """
+        Implement the backward propagation for a single RELU unit.
+
+        Arguments:
+        dA -- post-activation gradient, of any shape
+        cache -- 'Z' where we store for computing backward propagation efficiently
+
+        Returns:
+        dZ -- Gradient of the cost with respect to Z
+        """
+
+    Z = cache
+    dZ = np.array(dA, copy=True)  # just converting dz to a correct object.
+
+    # When z <= 0, you should set dz to 0 as well.
+    dZ[Z <= 0] = 0
+
+    assert (dZ.shape == Z.shape)
+
+    return dZ
 
 
 def L_model_backward(AL, Y, caches):
@@ -248,3 +325,93 @@ def update_parameters(parameters, grads, learning_rate):
         parameters["W" + str(l + 1)] = parameters["W" + str(l + 1)] - learning_rate * grads["dW" + str(l + 1)]
         parameters["b" + str(l + 1)] = parameters["b" + str(l + 1)] - learning_rate * grads["db" + str(l + 1)]
     return parameters
+
+	
+def L_layer_model(X, Y, layers_dims, learning_rate = 0.075, num_iterations = 3000, print_cost=True):#lr was 0.009
+    """
+    Implements a L-layer neural network: [LINEAR->RELU]*(L-1)->LINEAR->SIGMOID.
+    
+    Arguments:
+    X -- data, numpy array of shape (number of examples, num_px * num_px * 3)
+    Y -- true "label" vector (containing 0 if cat, 1 if non-cat), of shape (1, number of examples)
+    layers_dims -- list containing the input size and each layer size, of length (number of layers + 1).
+    learning_rate -- learning rate of the gradient descent update rule
+    num_iterations -- number of iterations of the optimization loop
+    print_cost -- if True, it prints the cost every 100 steps
+    
+    Returns:
+    parameters -- parameters learnt by the model. They can then be used to predict.
+    """
+
+    costs = []                         # keep track of cost
+    # Parameters initialization. 
+    parameters = initialize_parameters_deep(layers_dims)
+
+    # Loop (gradient descent)
+    for i in range(0, num_iterations):
+
+        # Forward propagation: [LINEAR -> RELU]*(L-1) -> LINEAR -> SIGMOID.
+        AL, caches =  L_model_forward(X, parameters)
+
+        # Compute cost.
+        cost = compute_cost(AL, Y)
+    
+        # Backward propagation.
+        grads = L_model_backward(AL, Y, caches)
+
+ 
+        # Update parameters.
+        parameters = update_parameters(parameters, grads, learning_rate)
+                
+        # Print the cost every 100 training example
+        if print_cost and i % 100 == 0:
+            print ("Cost after iteration %i: %f" %(i, cost))
+        if print_cost and i % 100 == 0:
+            costs.append(cost)
+            
+    # plot the cost
+    plt.plot(np.squeeze(costs))
+    plt.ylabel('cost')
+    plt.xlabel('iterations (per tens)')
+    plt.title("Learning rate =" + str(learning_rate))
+    plt.show()
+    return parameters
+
+
+def predict(X, Y, parameters):
+    '''''
+    Input:
+    X: test dataset with shape(nx,m)
+    Y: test dataset with shape(1,m)
+    parameters : dict data{"W1","b1",...,"WL","bL"}
+
+    Output: 
+    pred: predicted labels of test dataset
+
+    '''''
+
+    num = X.shape[1]
+    pred = np.zeros((1, num))
+    L = len(parameters) // 2
+    A0 = X
+    for l in range(1, L):
+        Z = np.dot(parameters["W" + str(l)], A0) + parameters["b" + str(l)]
+        A,cache = relu(Z)
+        A0 = A
+    Z = np.dot(parameters["W" + str(L)], A0) + parameters["b" + str(L)]
+    A,cache = sigmoid(Z)
+
+    for i in range(A.shape[1]):
+        if A[0, i] <= 0.5:
+            pred[0, i] = 0
+        else:
+            pred[0, i] = 1
+    print("accuracy:{}%".format(100 - np.mean(np.abs(pred - Y)) * 100))
+    return pred
+
+if __name__ == '__main__':
+    #parameters = L_layer_model(X, Y, [30,5,1], learning_rate = 0.075, num_iterations = 8000)
+    parameters = L_layer_model(X, Y, [30,6, 1], learning_rate=0.075, num_iterations=3000)
+    predict(x, y, parameters)
+
+
