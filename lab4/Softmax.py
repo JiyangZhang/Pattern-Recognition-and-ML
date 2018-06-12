@@ -1,6 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import BreastData
+import IrisData
+
+training_set_data, training_set_label, test_set_data, test_set_label = IrisData.dispose()
 
 def softmax(Z):
     cache = Z
@@ -11,8 +13,8 @@ def softmax(Z):
 
 def softmax_backward(Y, cache):
     Z = cache
-    AL = softmax(Z)
-    dZ = Y - AL
+    AL, m = softmax(Z)
+    dZ = -Y + AL
     return dZ
 
 def relu(Z):
@@ -32,13 +34,6 @@ def relu_backward(dA, cache):
     assert (dZ.shape == Z.shape)
     return dZ
 
-# Load the UCI BreastCancer dataset
-training_set, test_set = BreastData.data_process()
-X = training_set[0]
-Y = training_set[1]
-# Load test set
-x = test_set[0]
-y = test_set[1]
 
 
 def initialize_parameters_deep(layer_dims):
@@ -55,8 +50,8 @@ def initialize_parameters_deep(layer_dims):
     L = len(layer_dims)  # number of layers in the network
 
     for l in range(1, L):
-        parameters['W' + str(l)] = np.random.randn(layer_dims[l], layer_dims[l - 1]) * 0.01
-        parameters['b' + str(l)] = np.random.randn(layer_dims[l], 1) * 0.01
+        parameters['W' + str(l)] = np.random.randn(layer_dims[l], layer_dims[l - 1]) * np.sqrt(2/layer_dims[l-1])
+        parameters['b' + str(l)] = np.zeros((layer_dims[l], 1))
         assert (parameters['W' + str(l)].shape == (layer_dims[l], layer_dims[l - 1]))
         assert (parameters['b' + str(l)].shape == (layer_dims[l], 1))
 
@@ -110,14 +105,15 @@ def L_model_forward(X, parameters):
 
 def Scost(AL, Y, lamda, w):
     m = AL.shape[1]
-    cost = -1/m *(np.sum(Y * np.log(AL))) + lamda/2 * np.sum(w**2)
+    assert(m == 130)
+    cost = -1/m *(np.sum(Y * np.log(AL))) + lamda/2 * 1/m * np.sum(w**2)
     return cost
 
 def linear_backward(dZ, cache, lamda=0):
     A_prev, W, b = cache
     m = A_prev.shape[1]
 
-    dW = 1 / m * np.dot(dZ, A_prev.T) + lamda * W
+    dW = 1 / m * np.dot(dZ, A_prev.T) + 1/m * lamda * W
     db = 1 / m * np.sum(dZ, axis=1)
     db = db.reshape(b.shape)
     dA_prev = np.dot(W.T, dZ)
@@ -185,22 +181,7 @@ def update_parameters(parameters, grads, learning_rate):
     return parameters
 
 
-def L_layer_model(X, Y, layers_dims, learning_rate=0.075, num_iterations=3000, print_cost=True, lamda=0.2):  # lr was 0.009
-    """
-    Implements a L-layer neural network: [LINEAR->RELU]*(L-1)->LINEAR->SIGMOID.
-
-    Arguments:
-    X -- data, numpy array of shape (number of examples, num_px * num_px * 3)
-    Y -- true "label" vector (containing 0 if cat, 1 if non-cat), of shape (1, number of examples)
-    layers_dims -- list containing the input size and each layer size, of length (number of layers + 1).
-    learning_rate -- learning rate of the gradient descent update rule
-    num_iterations -- number of iterations of the optimization loop
-    print_cost -- if True, it prints the cost every 100 steps
-
-    Returns:
-    parameters -- parameters learnt by the model. They can then be used to predict.
-    """
-
+def L_layer_model(X, Y, layers_dims, learning_rate=0.075, num_iterations=3000, print_cost=True, lamda=0.02):  # lr was 0.009
     costs = []  # keep track of cost
     # Parameters initialization.
     parameters = initialize_parameters_deep(layers_dims)
@@ -212,7 +193,7 @@ def L_layer_model(X, Y, layers_dims, learning_rate=0.075, num_iterations=3000, p
         AL, caches = L_model_forward(X, parameters)
 
         # Compute cost.
-        cost = Scost(AL, Y, lamda, parameters['W' + str(len(layers_dims))])
+        cost = Scost(AL, Y, lamda, parameters['W' + str(len(layers_dims)-1)])
 
         # Backward propagation.
         grads = L_model_backward(AL, Y, caches, lamda)
@@ -234,5 +215,27 @@ def L_layer_model(X, Y, layers_dims, learning_rate=0.075, num_iterations=3000, p
     plt.show()
     return parameters
 
+def predict(X, Y, parameters):
+    num = X.shape[1]
+    L = len(parameters) // 2
+    A0 = X
+    for l in range(1, L):
+        Z = np.dot(parameters["W" + str(l)], A0) + parameters["b" + str(l)]
+        A,cache = relu(Z)
+        A0 = A
+    Z = np.dot(parameters["W" + str(L)], A0) + parameters["b" + str(L)]
+    A,cache = softmax(Z)
+
+    maxm = np.max(A, axis=0)
+    maxm = maxm * np.ones(A.shape)
+    result = np.ones(A.shape)
+    result[A<maxm] = 0
 
 
+    print("accuracy:{}%".format(100 - np.mean(np.abs(result - Y)) * 100))
+    return result
+
+
+if __name__ == '__main__':
+    parameters = L_layer_model(training_set_data, training_set_label, [4,6,3], learning_rate = 0.075, num_iterations = 4000)
+    print(predict(test_set_data, test_set_label, parameters))
